@@ -3,6 +3,7 @@ package org.knowm.xchange.okex.v5.service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.knowm.xchange.client.ResilienceRegistries;
@@ -16,9 +17,7 @@ import org.knowm.xchange.okex.v5.OkexAdapters;
 import org.knowm.xchange.okex.v5.OkexExchange;
 import org.knowm.xchange.okex.v5.dto.OkexException;
 import org.knowm.xchange.okex.v5.dto.OkexResponse;
-import org.knowm.xchange.okex.v5.dto.trade.OkexCancelOrderRequest;
-import org.knowm.xchange.okex.v5.dto.trade.OkexOrderDetails;
-import org.knowm.xchange.okex.v5.dto.trade.OkexOrderResponse;
+import org.knowm.xchange.okex.v5.dto.trade.*;
 import org.knowm.xchange.service.trade.TradeService;
 import org.knowm.xchange.service.trade.params.CancelOrderByIdParams;
 import org.knowm.xchange.service.trade.params.CancelOrderByInstrument;
@@ -31,6 +30,9 @@ import org.knowm.xchange.service.trade.params.orders.OpenOrdersParamInstrument;
 import org.knowm.xchange.service.trade.params.orders.OpenOrdersParams;
 import org.knowm.xchange.service.trade.params.orders.OrderQueryParamInstrument;
 import org.knowm.xchange.service.trade.params.orders.OrderQueryParams;
+import org.knowm.xchange.utils.DateUtils;
+
+import static org.knowm.xchange.okex.v5.OkexAuthenticated.balancePath;
 
 /** Author: Max Gao (gaamox@tutanota.com) Created: 08-06-2021 */
 public class OkexTradeService extends OkexTradeServiceRaw implements TradeService {
@@ -219,5 +221,30 @@ public class OkexTradeService extends OkexTradeServiceRaw implements TradeServic
         .stream()
         .map(result -> "0".equals(result.getCode()))
         .collect(Collectors.toList());
+  }
+
+  public OkexClosePositionResponse closePosition(OkexClosePositionRequest request) throws IOException {
+    try {
+      return decorateApiCall(
+              () ->
+                      okexAuthenticated.closePosition(
+                              exchange.getExchangeSpecification().getApiKey(),
+                              signatureCreator,
+                              DateUtils.toUTCISODateString(new Date()),
+                              (String)
+                                      exchange
+                                              .getExchangeSpecification()
+                                              .getExchangeSpecificParametersItem("passphrase"),
+                              (String)
+                                      exchange
+                                              .getExchangeSpecification()
+                                              .getExchangeSpecificParametersItem("simulated"),
+                              request))
+              .withRateLimiter(rateLimiter(balancePath))
+              .call()
+              .getData();
+    } catch (OkexException e) {
+      throw handleError(e);
+    }
   }
 }

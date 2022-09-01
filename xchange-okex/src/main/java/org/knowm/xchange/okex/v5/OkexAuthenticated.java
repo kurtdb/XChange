@@ -24,11 +24,7 @@ import org.knowm.xchange.okex.v5.dto.account.OkexWalletBalance;
 import org.knowm.xchange.okex.v5.dto.account.PiggyBalance;
 import org.knowm.xchange.okex.v5.dto.marketdata.OkexCurrency;
 import org.knowm.xchange.okex.v5.dto.subaccount.OkexSubAccountDetails;
-import org.knowm.xchange.okex.v5.dto.trade.OkexAmendOrderRequest;
-import org.knowm.xchange.okex.v5.dto.trade.OkexCancelOrderRequest;
-import org.knowm.xchange.okex.v5.dto.trade.OkexOrderDetails;
-import org.knowm.xchange.okex.v5.dto.trade.OkexOrderRequest;
-import org.knowm.xchange.okex.v5.dto.trade.OkexOrderResponse;
+import org.knowm.xchange.okex.v5.dto.trade.*;
 import si.mazi.rescu.ParamsDigest;
 
 @Path("/api/v5")
@@ -52,6 +48,10 @@ public interface OkexAuthenticated extends Okex {
   String subAccountList = "/users/subaccount/list"; // Stated as 2 req/2 sec
   String subAccountBalance = "/account/subaccount/balances"; // Stated as 2 req/2 sec
   String piggyBalance = "/asset/piggy-balance"; // Stated as 6 req/1 sec
+  String closePosition = "/api/v5/trade/close-position"; // Stated as 20 req/2 sec
+  String getLeverage = "/api/v5/account/leverage-info"; // Stated as 20 req/2 sec
+  String setLeverage = "/api/v5/account/set-leverage"; // Stated as 20 req/2 sec
+
 
   // To avoid 429s, actual req/second may need to be lowered!
   Map<String, List<Integer>> privatePathRateLimits =
@@ -75,6 +75,9 @@ public interface OkexAuthenticated extends Okex {
           put(subAccountList, Arrays.asList(2, 2));
           put(subAccountBalance, Arrays.asList(2, 2));
           put(piggyBalance, Arrays.asList(6, 1));
+          put(closePosition, Arrays.asList(20, 2));
+          put(getLeverage, Arrays.asList(20, 2));
+          put(setLeverage, Arrays.asList(20, 2));
         }
       };
 
@@ -296,4 +299,40 @@ public interface OkexAuthenticated extends Okex {
       @HeaderParam("X-SIMULATED-TRADING") String simulatedTrading,
       List<OkexAmendOrderRequest> requestPayload)
       throws OkexException, IOException;
+
+  @GET
+  @Path(getLeverage)
+  @Consumes(MediaType.APPLICATION_JSON)
+  OkexResponse<OkexGetLeverageResponse> getLeverageInformation(
+          @HeaderParam("OK-ACCESS-KEY") String apiKey,
+          @HeaderParam("OK-ACCESS-SIGN") ParamsDigest signature,
+          @HeaderParam("OK-ACCESS-TIMESTAMP") String timestamp,
+          @HeaderParam("OK-ACCESS-PASSPHRASE") String passphrase,
+          @HeaderParam("X-SIMULATED-TRADING") String simulatedTrading,
+          OkexGetLeverageRequest request
+  ) throws OkexException, IOException;
+
+  @POST
+  @Path(setLeverage)
+  @Consumes(MediaType.APPLICATION_JSON)
+  OkexResponse<OkexSetLeverageResponse> setLeverageInformation(
+          @HeaderParam("OK-ACCESS-KEY") String apiKey,
+          @HeaderParam("OK-ACCESS-SIGN") ParamsDigest signature,
+          @HeaderParam("OK-ACCESS-TIMESTAMP") String timestamp,
+          @HeaderParam("OK-ACCESS-PASSPHRASE") String passphrase,
+          @HeaderParam("X-SIMULATED-TRADING") String simulatedTrading,
+          OkexSetLeverageRequest request
+  ) throws OkexException, IOException;
+
+  @POST
+  @Path(closePosition)
+  @Consumes(MediaType.APPLICATION_JSON)
+  OkexResponse<OkexClosePositionResponse> closePosition(
+          @HeaderParam("OK-ACCESS-KEY") String apiKey,
+          @HeaderParam("OK-ACCESS-SIGN") ParamsDigest signature,
+          @HeaderParam("OK-ACCESS-TIMESTAMP") String timestamp,
+          @HeaderParam("OK-ACCESS-PASSPHRASE") String passphrase,
+          @HeaderParam("X-SIMULATED-TRADING") String simulatedTrading,
+          OkexClosePositionRequest request
+  ) throws OkexException, IOException;
 }
